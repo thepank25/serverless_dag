@@ -5,30 +5,29 @@ from airflow.decorators import task
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.providers.amazon.aws.operators.lambda_function import LambdaInvokeFunctionOperator
-from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.utils.task_group import TaskGroup
 from airflow.utils.dates import days_ago
 import json
-from airflow.utils.trigger_rule import TriggerRule
 from airflow.operators.python import get_current_context
 import logging
 
 logger = logging.getLogger()
 
+MY_BUCKET = "INSERT_YOUR_BUCKET_NAME"
 default_args = {
     'owner': 'airflow',
     'start_date': days_ago(1),
 }
 
 with DAG(
-    dag_id='lambda_memory_based_routing_decorators',
+    dag_id='serverless_dag_decorators',
     default_args=default_args,
     schedule_interval=None,
     catchup=False) as dag:
 
     list_filenames = S3ListOperator(
         task_id="list_filenames",
-        bucket="credence-core-raw",
+        bucket=MY_BUCKET,
         prefix=r"serverless_dag/data",
     )
 
@@ -58,12 +57,12 @@ with DAG(
                'filesize': filesize})            
                              }
         if filesize < 10000:
-            d['function_name'] = 'invoke_small_memory_lambda'
+            d['function_name'] = 'process_small_csv'
 
         elif filesize < 20000:
-            d['function_name'] = 'invoke_medium_memory_lambda'
+            d['function_name'] = 'process_medium_csv'
         else:
-            d['function_name'] = 'invoke_large_memory_lambda'
+            d['function_name'] = 'process_large_csv'
         return d
 
     file_sizes = get_file_size.partial(

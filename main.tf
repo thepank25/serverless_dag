@@ -53,9 +53,9 @@ resource "aws_iam_role_policy_attachment" "s3_admin_policy_attachment" {
 
 locals {
     lambda_function_names = {
-        invoke_small_memory_lambda  = 128
-        invoke_medium_memory_lambda = 256
-        invoke_large_memory_lambda  = 1024
+        process_small_csv  = 128
+        process_medium_csv = 256
+        process_large_csv  = 1024
     }
 }
 
@@ -63,12 +63,12 @@ resource "aws_lambda_function" "branching_lambdas" {
     for_each = local.lambda_function_names
     function_name = each.key
     role          = aws_iam_role.lambda_role.arn
-    handler       = "lambda_function_payload.lambda_handler"
+    handler       = "af_RowCounts.lambda_handler"
     runtime       = "python3.10"
-    filename      = "lambda_function_payload.zip"
+    filename      = "af_RowCounts.zip"
     memory_size   = each.value
     timeout       = 30
 
-    source_code_hash = filebase64sha256("lambda_function_payload.zip")
+    source_code_hash = filebase64sha256("af_RowCounts.zip")
 }
 
