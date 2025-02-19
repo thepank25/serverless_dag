@@ -1,0 +1,6 @@
+data/*
+.terraform*
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate
+config.tfvars
