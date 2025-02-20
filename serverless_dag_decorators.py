@@ -13,7 +13,7 @@ import logging
 
 logger = logging.getLogger()
 
-MY_BUCKET = "INSERT_YOUR_BUCKET_NAME"
+MY_BUCKET = "credence-core-raw"
 default_args = {
     'owner': 'airflow',
     'start_date': days_ago(1),
@@ -31,8 +31,10 @@ with DAG(
         prefix=r"serverless_dag/data",
     )
 
-    @task(task_id='get_file_size')
+    @task(task_id='get_file_size',map_index_template = """{{ filename }}""")
     def get_file_size(aws_conn_id, bucket, filename):
+        context = get_current_context()
+        context["filename"] = filename
         hook = S3Hook(aws_conn_id=aws_conn_id)
         logging.info(f"Getting file size for {filename}")
         return {filename: hook.get_key(filename, bucket).content_length}
@@ -81,6 +83,7 @@ with DAG(
         invoke_lambda_operators = LambdaInvokeFunctionOperator.partial(
             task_id = 'call_lambdas',
             aws_conn_id = 'aws_default',
+            map_index_template = """{{task['function_name']}}"""
         ).expand_kwargs(branch_task)
 
         branch_task >> invoke_lambda_operators 
